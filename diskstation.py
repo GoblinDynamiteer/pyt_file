@@ -38,5 +38,15 @@ def ismounted(ds_share):
     else:
         print_warning("Invalid share: {}".format(ds_share))
 
+def get_mount_path(ds_share):
+    ds_shares = ['TV', 'FILM', 'MISC', 'BACKUP', 'DATA']
+    home = os.getenv("HOME")
+    if ds_share.upper() in ds_shares :
+        local_dest = os.path.join(home, "smb", ds_share.lower())
+        return local_dest
+    else:
+        print_warning("Invalid share: {}".format(ds_share))
+        return None
+
 #TODO: Unmount
 #sudo umount ~/smb/tv

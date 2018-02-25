@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import argparse, os, paths, user_input
-#in PYTHONPATH
 import movie
 
 parser = argparse.ArgumentParser(description='TV/Movie UnRarer')
