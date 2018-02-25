@@ -16,9 +16,18 @@ def get_creation_date(path_to_file_or_folder, convert=False):
 
 # Create nfo file with IMDb-id for movie
 def create_nfo(full_path, imdb):
-    if not os.path.isfile(full_path):
-        with open(full_path + "movie.nfo", 'w') as newfile:
-            newfile.write(imdb)
+    nfo_path = os.path.join(full_path, "movie.nfo")
+    if not os.path.isfile(nfo_path):
+        try:
+            with open(nfo_path, 'w') as newfile:
+                newfile.write(imdb)
+            return True
+        except:
+            print_warning("create_nfo: Could not create movie.nfo: {}".format(full_path))
+            return False
+    else:
+        print_warning("create_nfo: movie.nfo already exists: {}".format(full_path))
+        return True
 
 def is_file_empty(full_path):
     try:
@@ -31,3 +40,14 @@ def is_file_empty(full_path):
 # Copy file to dest, append  YYYY-MM-DD-HHMM
 def backup_file(src_full_path, dest_dir_full_path):
     now = datetime.now().strftime("%Y-%m-%d-%H%M")
+    dest = os.path.join(dest_dir_full_path, now)
+
+    try:
+        if not os.path.exists(dest):
+            os.makedirs(dest)
+
+        copy2(src_full_path, dest)
+        return True
+    except:
+        print_waring("backup_file: Could not backup file: {}".format(src_full_path))
+        return False
