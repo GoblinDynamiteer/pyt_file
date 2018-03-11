@@ -1,27 +1,30 @@
 # -*- coding: utf-8 -*-
 import os, paths, platform
 from printout import print_warning
+import subprocess
 
 #Mount share
 def mount(ds_share):
+    print("here")
     if platform.system() != 'Linux':
         print("mount: Not on a Linux-system, quitting.")
         quit()
     dsip="192.168.0.101"
-    opt = "credentials=$HOME/.smbcredentials,iocharset=utf8,vers=3.0," \
-        "rw,file_mode=0777,dir_mode=0777"
+    home = os.getenv("HOME")
+    opt = "credentials={}/.smbcredentials,iocharset=utf8,vers=3.0,rw,file_mode=0777,dir_mode=0777".format(home)
     ds_shares = ['TV', 'FILM', 'MISC', 'BACKUP', 'DATA']
-    if ds_share is 'all' or ds_share.upper() in ds_shares :
+    if ds_share == "all" or ds_share.upper() in ds_shares:
         for share in ds_shares:
-            if share == ds_share.upper() or ds_share is 'all':
+            if share == ds_share.upper() or ds_share == "all":
                 if ismounted(share):
                     print("{} is already mounted.".format(share))
                     continue
                 src = "//{}/{}".format(dsip, share)
-                local_dest = "$HOME/smb/{}".format(share.lower())
+                local_dest = "{}/smb/{}".format(home, share.lower())
                 command = "sudo mount -t cifs {} {} -o {}".format(src, local_dest, opt)
-                print("Mounting {} to {}".format(share), local_dest)
-                os.system(command)
+                print("Mounting {} to {}".format(share, local_dest))
+                #os.system(command)
+                subprocess.call(["sudo", "mount", "-t", "cifs", src, local_dest, "-o", opt])
     else:
         print_warning("Invalid share: {}".format(ds_share))
 
@@ -50,3 +53,4 @@ def get_mount_path(ds_share):
 
 #TODO: Unmount
 #sudo umount ~/smb/tv
+mount("all")

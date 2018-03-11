@@ -7,7 +7,7 @@ from printout import print_warning
 class configuration_manager:
     def __init__(self):
         self.config = None;
-        self.filename = os.path.dirname(os.path.realpath(__file__)) + "\settings.ini"
+        self.filename = paths.get_path_to_file_same_dir(__file__, "settings.ini")
         self.load_success = False
         self._load_settings()
 
