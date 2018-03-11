@@ -41,13 +41,12 @@ def is_file_empty(full_path):
 def backup_file(src_full_path, dest_dir_full_path):
     now = datetime.now().strftime("%Y-%m-%d-%H%M")
     dest = os.path.join(dest_dir_full_path, now)
-
     try:
         if not os.path.exists(dest):
             os.makedirs(dest)
-
         copy2(src_full_path, dest)
         return True
     except:
-        print_waring("backup_file: Could not backup file: {}".format(src_full_path))
+        print_warning("backup_file: Could not backup file: {}".format(src_full_path))
+        print("Make sure to run scripts as sudo!")
         return False
