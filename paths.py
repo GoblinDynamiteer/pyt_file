@@ -11,7 +11,6 @@ def get_path_to_file_same_dir(script__file__, filename):
 
 setting_location = get_path_to_file_same_dir(__file__, "settings.ini")
 
-print(setting_location)
 config.read(setting_location)
 
 for mod_path in config['modpath']:

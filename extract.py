@@ -30,8 +30,7 @@ if rar_file is None:
 source_file = os.path.join(source_path, rar_file)
 if user_input.yes_no("EXTRACT:\n{} \n --> \n{}".format(source_file, dest_path)):
     # TODO: Use subprocess.call instead of os.system
-    print("ok")
-    #os.system("unrar e \"{}\" \"{}\"".format(source_file, dest_path))
+    os.system("unrar e \"{}\" \"{}\"".format(source_file, dest_path))
 
 else:
     quit()
