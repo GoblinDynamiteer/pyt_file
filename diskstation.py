@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
 import os, paths, platform
+from config import configuration_manager as cfg
 from printout import print_warning
 import subprocess
 
+_config = cfg()
+
 def get_mount_points():
     return ['TV', 'FILM', 'MISC', 'BACKUP', 'DATA']
+
+def get_mount_dest():
+    return _config.get_setting("path", "dsmount")
 
 #Mount share
 def mount(ds_share):
@@ -12,7 +18,7 @@ def mount(ds_share):
         print("mount: Not on a Linux-system, quitting.")
         quit()
     dsip="192.168.0.101"
-    home = os.getenv("HOME")
+    mount_dest = get_mount_dest()
     opt = "credentials={}/.smbcredentials,iocharset=utf8,vers=3.0,rw,file_mode=0777,dir_mode=0777".format(home)
     ds_shares = get_mount_points()
     if ds_share == "all" or ds_share.upper() in ds_shares:
@@ -22,7 +28,7 @@ def mount(ds_share):
                     print("{} is mounted at {}".format(share, get_mount_path(share)))
                     continue
                 src = "//{}/{}".format(dsip, share)
-                local_dest = "{}/smb/{}".format(home, share.lower())
+                local_dest = "{}{}".format(mount_dest, share.lower())
                 command = "sudo mount -t cifs {} {} -o {}".format(src, local_dest, opt)
                 print("Mounting {} to {}".format(share, local_dest))
                 #os.system(command)
@@ -33,9 +39,9 @@ def mount(ds_share):
 # Check if share is already mounted
 def ismounted(ds_share):
     ds_shares = get_mount_points()
-    home = os.getenv("HOME")
+    mount_dest = get_mount_dest()
     if ds_share.upper() in ds_shares :
-        local_dest = os.path.join(home, "smb", ds_share.lower())
+        local_dest = os.path.join(mount_dest, ds_share.lower())
         subdirs = os.listdir(local_dest)
         if len(subdirs) > 1:
             return True
@@ -46,9 +52,9 @@ def ismounted(ds_share):
 # Get local mount path of ds share
 def get_mount_path(ds_share):
     ds_shares = get_mount_points()
-    home = os.getenv("HOME")
+    mount_dest = get_mount_dest()
     if ds_share.upper() in ds_shares :
-        local_dest = os.path.join(home, "smb", ds_share.lower())
+        local_dest = os.path.join(mount_dest, ds_share.lower())
         return local_dest
     else:
         print_warning("Invalid share: {}".format(ds_share))
