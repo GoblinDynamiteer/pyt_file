@@ -12,6 +12,9 @@ def get_mount_points():
 def get_mount_dest():
     return _config.get_setting("path", "dsmount")
 
+def get_home():
+    return _config.get_setting("path", "home")
+
 #Mount share
 def mount(ds_share):
     if platform.system() != 'Linux':
@@ -19,7 +22,8 @@ def mount(ds_share):
         quit()
     dsip="192.168.0.101"
     mount_dest = get_mount_dest()
-    opt = "credentials={}/.smbcredentials,iocharset=utf8,vers=3.0,rw,file_mode=0777,dir_mode=0777".format(home)
+    home = get_home()
+    opt = "credentials={}.smbcredentials,iocharset=utf8,vers=3.0,rw,file_mode=0777,dir_mode=0777".format(home)
     ds_shares = get_mount_points()
     if ds_share == "all" or ds_share.upper() in ds_shares:
         for share in ds_shares:
