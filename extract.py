@@ -1,49 +1,127 @@
 # -*- coding: utf-8 -*-
 
-import argparse, os, paths, user_input, re
-import movie, filetools
+import argparse, os, paths, user_input, re, shutil
+import movie, filetools, tvshow
+from printout import print_script_name as psn
+from printout import print_color_between as pcb
+from config import configuration_manager as cfg
+
+_config = cfg()
+
+def type_points(folder):
+    regex = {'season': '\.[Ss]\d{2}\.', 'episode': "\.[Ss]\d{2}[Ee]\d{2}",
+             'movie': "\.\d{4}\.\d{3,4}p\."}
+    points = {'season': 0, 'episode': 0, 'movie': 0}
+    for key in regex:
+        if is_regex_match(regex[key], folder):
+            points[key] += 1
+    return points
+
+def is_regex_match(regex, string):
+    rgx = re.compile(regex)
+    match = re.search(rgx, string)
+    if match:
+        return True
+    return False
+
+def guess_type(folder):
+    points = type_points(folder)
+    max_key = 0
+    winner_key = None
+    for key in points:
+        if points[key] > max_key:
+            max_key = points[key]
+            winner_key = key
+    return winner_key
+
+# Find rar and nfo-files passed in directory
+def extract_mov(folder):
+    rar_file = None
+    nfo_file = None
+    dest_path = os.path.join(movie.root_path(), movie.determine_letter(dir_name), dir_name)
+    source_path = os.path.join(cwd, dir_name)
+    script = os.path.basename(__file__)
+    for f in os.listdir(source_path):
+        if f.endswith(".rar"):
+            rar_file = str(f)
+        if f.endswith(".nfo"):
+            nfo_file = str(f)
+
+    # TODO: Check != sub rar
+    if rar_file is None:
+        print("Could not find .rar in {}". format(dir_name))
+        quit()
+
+    source_file = os.path.join(source_path, rar_file)
+    psn(script, "Found rar-file: {}".format(os.path.basename(source_file)))
+    if user_input.yes_no("Extract to: {}".format(dest_path), script_name = script):
+        # TODO: Use subprocess.call instead of os.system
+        os.system("unrar e \"{}\" \"{}\"".format(source_file, dest_path))
+
+    else:
+        quit()
+
+    if nfo_file is not None:
+        pattern = re.compile("tt\d{2,}")
+        nfo_file = os.path.join(source_path, nfo_file)
+        with open(nfo_file, 'r', encoding='utf-8', errors='ignore') as nfo:
+            for line in nfo:
+                match = re.search(pattern, line)
+                if match:
+                    imdb_id = match[0]
+                    psn(script, "Found IMDb-id in nfo-file: {0}".format(imdb_id))
+                    filetools.create_nfo(dest_path, "http://www.imdb.com/title/{}".format(imdb_id))
+
+def extract_season(folder):
+    script = os.path.basename(__file__)
+    dest_path = os.path.join(tvshow.root_path(), tvshow.guess_ds_folder(folder))
+    source_path = os.path.join(cwd, dir_name)
+    if os.path.exists(dest_path):
+        psn(script, "", endl=False)
+        pcb("[ {} ] exists!".format(dest_path), "blue")
+    season = tvshow.guess_season(folder)
+    psn(script, "guessed season: {}".format(season))
+    dest_path = os.path.join(dest_path, season)
+    if user_input.yes_no("Extract to: {}".format(dest_path), script_name = script):
+        move_subs(source_path, folder)
+        if not os.path.exists(dest_path):
+            os.makedirs(dest_path)
+        # TODO: Use subprocess.call instead of os.system
+        print("unrar e -r \"{}*.rar\" \"{}\"".format(source_path, dest_path))
+        os.system("unrar e -r \"{}*.rar\" \"{}\"".format(source_path, dest_path))
+
+def move_subs(full_source_path, folder):
+    script = os.path.basename(__file__)
+    misc_root = _config.get_setting("path", "misc")
+    dest_path = os.path.join(misc_root, "Subtitles", folder)
+    found_subs = False
+    if not os.path.exists(dest_path):
+        psn(script, "Creating {}".format(dest_path))
+        os.makedirs(dest_path)
+    for root, dirs, files in os.walk(full_source_path):
+        for file in files:
+            if file.endswith(".subs.rar") or file.endswith(".subs.sfv"):
+                if not found_subs:
+                    found_subs = True
+                    psn(script, "Found subtitles - will move before extract")
+                file_to_move = os.path.join(root, file)
+                psn(script, "Moving {} to subs storage".format(file))
+                shutil.move(file_to_move, dest_path)
 
 parser = argparse.ArgumentParser(description='TV/Movie UnRarer')
 parser.add_argument('dir', type=str, help='Path to movie or tv source')
 args = parser.parse_args()
+script_name = os.path.basename(__file__)
 
 dir_name = args.dir
 cwd = os.getcwd() # Get working directory
-dest_path = os.path.join(movie.root_path(), movie.determine_letter(dir_name), dir_name)
-source_path = os.path.join(cwd, dir_name)
 
-rar_file = None
-nfo_file = None
-
-# Find rar and nfo-files passed in directory
-for f in os.listdir(source_path):
-    if f.endswith(".rar"):
-        rar_file = str(f)
-    if f.endswith(".nfo"):
-        nfo_file = str(f)
-
-# TODO: Check != sub rar
-if rar_file is None:
-    print("Could not find .rar in {}". format(dir_name))
-    quit()
-
-source_file = os.path.join(source_path, rar_file)
-if user_input.yes_no("EXTRACT:\n{} \n --> \n{}".format(source_file, dest_path)):
-    # TODO: Use subprocess.call instead of os.system
-    os.system("unrar e \"{}\" \"{}\"".format(source_file, dest_path))
-
-else:
-    quit()
-
-if nfo_file is not None:
-    pattern = re.compile("tt\d{2,}")
-    nfo_file = os.path.join(source_path, nfo_file)
-    with open(nfo_file, 'r', encoding='utf-8', errors='ignore') as nfo:
-        for line in nfo:
-            match = re.search(pattern, line)
-            if match:
-                imdb_id = match[0]
-                print("Found IMDb-id in nfo-file: {0}".format(imdb_id))
-                filetools.create_nfo(dest_path, "http://www.imdb.com/title/{}".format(imdb_id))
-
-# TODO: Determinge tv/movie -- now: assume Movie
+if guess_type(dir_name) is 'movie':
+    psn(script_name, "Guessed movie!")
+    extract_mov(dir_name)
+if guess_type(dir_name) is 'episode':
+    psn(script_name, "Guessed tv episode!")
+if guess_type(dir_name) is 'season':
+    psn(script_name, "Guessed tv season!")
+    extract_season(dir_name)
+quit()
