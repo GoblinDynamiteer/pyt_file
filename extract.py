@@ -43,7 +43,8 @@ def extract_mov(folder):
         quit()
     source_file = os.path.join(source_path, rar_file)
     print_log("Found rar-file: [ {} ]".format(os.path.basename(source_file)))
-    if user_input.yes_no("Extract to: [ {} ]".format(dest_path), script_name = script):
+    if user_input.yes_no("Extract to: [ {} ]".format(dest_path),
+        script_name=os.path.basename(__file__)):
         # TODO: Use subprocess.call instead of os.system
         os.system("unrar e \"{}\" \"{}\"".format(source_file, dest_path))
     else:
