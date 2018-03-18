@@ -8,11 +8,18 @@ from config import configuration_manager as cfg
 
 _config = cfg()
 
+def print_log(string):
+    script = os.path.basename(__file__)
+    if string.find('[') >= 0 and string.find(']') > 0:
+        psn(script, "", endl=False)
+        pcb(string, "blue")
+    else:
+        psn(script, string)
+
 def check_valid_source_folder(source_path):
     script = os.path.basename(__file__)
     if not os.path.exists(source_path): # Input folder is not a real dir
-        psn(script, "", endl=False)
-        pcb("[ {} ] does not exist, quitting!".format(source_path), "blue")
+        print_log("[ {} ] does not exist, quitting!".format(source_path))
         exit()
 
 # Find rar and nfo-files passed in directory
@@ -22,7 +29,6 @@ def extract_mov(folder):
     dest_path = os.path.join(movie.root_path(), movie.determine_letter(dir_name), dir_name)
     rar_file = None
     nfo_file = None
-    script = os.path.basename(__file__)
     for f in os.listdir(source_path):
         if f.endswith(".rar"):
             rar_file = str(f)
@@ -33,8 +39,8 @@ def extract_mov(folder):
         print("Could not find .rar in {}". format(dir_name))
         quit()
     source_file = os.path.join(source_path, rar_file)
-    psn(script, "Found rar-file: {}".format(os.path.basename(source_file)))
-    if user_input.yes_no("Extract to: {}".format(dest_path), script_name = script):
+    print_log("Found rar-file: [ {} ]".format(os.path.basename(source_file)))
+    if user_input.yes_no("Extract to: [ {} ]".format(dest_path), script_name = script):
         # TODO: Use subprocess.call instead of os.system
         os.system("unrar e \"{}\" \"{}\"".format(source_file, dest_path))
     else:
@@ -47,19 +53,17 @@ def extract_mov(folder):
                 match = re.search(pattern, line)
                 if match:
                     imdb_id = match[0]
-                    psn(script, "Found IMDb-id in nfo-file: {0}".format(imdb_id))
+                    print_log("Found IMDb-id in nfo-file: [ {} ]".format(imdb_id))
                     filetools.create_nfo(dest_path, "http://www.imdb.com/title/{}".format(imdb_id))
 
 def extract_season(folder):
-    script = os.path.basename(__file__)
     source_path = os.path.join(cwd, dir_name)
     check_valid_source_folder(source_path) # Will exit script if not valid
     dest_path = os.path.join(tvshow.root_path(), tvshow.guess_ds_folder(folder))
     if os.path.exists(dest_path):
-        psn(script, "", endl=False)
-        pcb("[ {} ] exists!".format(dest_path), "blue")
+        print_log("[ {} ] exists!".format(dest_path))
     season = tvshow.guess_season(folder)
-    psn(script, "guessed season: {}".format(season))
+    print_log("guessed season: {}".format(season))
     dest_path = os.path.join(dest_path, season)
     if user_input.yes_no("Extract to: {}".format(dest_path), script_name = script):
         move_subs(source_path, folder)
@@ -70,37 +74,38 @@ def extract_season(folder):
         os.system("unrar e -r \"{}*.rar\" \"{}\"".format(source_path, dest_path))
 
 def move_subs(full_source_path, folder):
-    script = os.path.basename(__file__)
     misc_root = _config.get_setting("path", "misc")
     dest_path = os.path.join(misc_root, "Subtitles", folder)
     found_subs = False
     if not os.path.exists(dest_path):
-        psn(script, "Creating {}".format(dest_path))
+        print_log("Creating {}".format(dest_path))
         os.makedirs(dest_path)
     for root, dirs, files in os.walk(full_source_path):
         for file in files:
             if file.endswith(".subs.rar") or file.endswith(".subs.sfv"):
                 if not found_subs:
                     found_subs = True
-                    psn(script, "Found subtitles - will move before extract")
+                    print_log("Found subtitles - will move before extract")
                 file_to_move = os.path.join(root, file)
-                psn(script, "Moving {} to subs storage".format(file))
+                print_log("Moving {} to subs storage".format(file))
                 shutil.move(file_to_move, dest_path)
 
 parser = argparse.ArgumentParser(description='TV/Movie UnRarer')
 parser.add_argument('dir', type=str, help='Path to movie or tv source')
 args = parser.parse_args()
-script_name = os.path.basename(__file__)
 
 dir_name = args.dir
 cwd = os.getcwd() # Get working directory
+guessed_type = filetools.guess_folder_type(dir_name)
 
-if filetools.guess_folder_type(dir_name) is 'movie':
-    psn(script_name, "Guessed movie!")
+if guessed_type == 'movie':
+    print_log("Guessed movie!")
     extract_mov(dir_name)
-if filetools.guess_folder_type(dir_name) is 'episode':
-    psn(script_name, "Guessed tv episode!")
-if filetools.guess_folder_type(dir_name) is 'season':
-    psn(script_name, "Guessed tv season!")
+elif guessed_type == 'episode':
+    print_log("Guessed tv episode!")
+elif guessed_type == 'season':
+    print_log("Guessed tv season!")
     extract_season(dir_name)
-quit()
+else:
+    print_log("Could not determine type of [ {} ]".format(dir_name))
+    quit()
