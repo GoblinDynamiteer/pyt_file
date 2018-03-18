@@ -8,59 +8,37 @@ from config import configuration_manager as cfg
 
 _config = cfg()
 
-def type_points(folder):
-    regex = {'season': '\.[Ss]\d{2}\.', 'episode': "\.[Ss]\d{2}[Ee]\d{2}",
-             'movie': "\.\d{4}\.\d{3,4}p\."}
-    points = {'season': 0, 'episode': 0, 'movie': 0}
-    for key in regex:
-        if is_regex_match(regex[key], folder):
-            points[key] += 1
-    return points
-
-def is_regex_match(regex, string):
-    rgx = re.compile(regex)
-    match = re.search(rgx, string)
-    if match:
-        return True
-    return False
-
-def guess_type(folder):
-    points = type_points(folder)
-    max_key = 0
-    winner_key = None
-    for key in points:
-        if points[key] > max_key:
-            max_key = points[key]
-            winner_key = key
-    return winner_key
+def check_valid_source_folder(source_path):
+    script = os.path.basename(__file__)
+    if not os.path.exists(source_path): # Input folder is not a real dir
+        psn(script, "", endl=False)
+        pcb("[ {} ] does not exist, quitting!".format(source_path), "blue")
+        exit()
 
 # Find rar and nfo-files passed in directory
 def extract_mov(folder):
+    source_path = os.path.join(cwd, dir_name)
+    check_valid_source_folder(source_path)  # Will exit script if not valid
+    dest_path = os.path.join(movie.root_path(), movie.determine_letter(dir_name), dir_name)
     rar_file = None
     nfo_file = None
-    dest_path = os.path.join(movie.root_path(), movie.determine_letter(dir_name), dir_name)
-    source_path = os.path.join(cwd, dir_name)
     script = os.path.basename(__file__)
     for f in os.listdir(source_path):
         if f.endswith(".rar"):
             rar_file = str(f)
         if f.endswith(".nfo"):
             nfo_file = str(f)
-
     # TODO: Check != sub rar
     if rar_file is None:
         print("Could not find .rar in {}". format(dir_name))
         quit()
-
     source_file = os.path.join(source_path, rar_file)
     psn(script, "Found rar-file: {}".format(os.path.basename(source_file)))
     if user_input.yes_no("Extract to: {}".format(dest_path), script_name = script):
         # TODO: Use subprocess.call instead of os.system
         os.system("unrar e \"{}\" \"{}\"".format(source_file, dest_path))
-
     else:
         quit()
-
     if nfo_file is not None:
         pattern = re.compile("tt\d{2,}")
         nfo_file = os.path.join(source_path, nfo_file)
@@ -74,8 +52,9 @@ def extract_mov(folder):
 
 def extract_season(folder):
     script = os.path.basename(__file__)
-    dest_path = os.path.join(tvshow.root_path(), tvshow.guess_ds_folder(folder))
     source_path = os.path.join(cwd, dir_name)
+    check_valid_source_folder(source_path) # Will exit script if not valid
+    dest_path = os.path.join(tvshow.root_path(), tvshow.guess_ds_folder(folder))
     if os.path.exists(dest_path):
         psn(script, "", endl=False)
         pcb("[ {} ] exists!".format(dest_path), "blue")
@@ -116,12 +95,12 @@ script_name = os.path.basename(__file__)
 dir_name = args.dir
 cwd = os.getcwd() # Get working directory
 
-if guess_type(dir_name) is 'movie':
+if filetools.guess_folder_type(dir_name) is 'movie':
     psn(script_name, "Guessed movie!")
     extract_mov(dir_name)
-if guess_type(dir_name) is 'episode':
+if filetools.guess_folder_type(dir_name) is 'episode':
     psn(script_name, "Guessed tv episode!")
-if guess_type(dir_name) is 'season':
+if filetools.guess_folder_type(dir_name) is 'season':
     psn(script_name, "Guessed tv season!")
     extract_season(dir_name)
 quit()
