@@ -4,22 +4,25 @@ import argparse, os, paths, user_input, re, shutil
 import movie, filetools, tvshow
 from printout import print_script_name as psn
 from printout import print_color_between as pcb
+from printout import print_error
 from config import configuration_manager as cfg
 
 _config = cfg()
 
-def print_log(string):
+def print_log(string, category=None):
     script = os.path.basename(__file__)
+    psn(script, "", endl=False) # Print script name
+    if category == "error":
+        print_error("Error: ", endl=False)
     if string.find('[') >= 0 and string.find(']') > 0:
-        psn(script, "", endl=False)
         pcb(string, "blue")
     else:
-        psn(script, string)
+        print(string)
 
 def check_valid_source_folder(source_path):
     script = os.path.basename(__file__)
     if not os.path.exists(source_path): # Input folder is not a real dir
-        print_log("[ {} ] does not exist, quitting!".format(source_path))
+        print_log("[ {} ] does not exist, quitting!".format(source_path), category="error")
         exit()
 
 # Find rar and nfo-files passed in directory
