@@ -1,5 +1,4 @@
-import platform
-import os
+import platform, os, re
 from datetime import datetime
 import diskstation as ds
 from printout import print_warning
@@ -50,3 +49,30 @@ def backup_file(src_full_path, dest_dir_full_path):
         print_warning("backup_file: Could not backup file: {}".format(src_full_path))
         print("Make sure to run scripts as sudo!")
         return False
+
+def _type_points(folder):
+    regex = {'season': '\.[Ss]\d{2}\.', 'episode': "\.[Ss]\d{2}[Ee]\d{2}",
+             'movie': "\.\d{4}\.\d{3,4}p\."}
+    points = {'season': 0, 'episode': 0, 'movie': 0}
+    for key in regex:
+        if _is_regex_match(regex[key], folder):
+            points[key] += 1
+    return points
+
+def _is_regex_match(regex, string):
+    rgx = re.compile(regex)
+    match = re.search(rgx, string)
+    if match:
+        return True
+    return False
+
+# Try to determine if folder (as string) is a movie / season / episode
+def guess_folder_type(folder):
+    points = _type_points(folder)
+    max_key = 0
+    winner_key = None
+    for key in points:
+        if points[key] > max_key:
+            max_key = points[key]
+            winner_key = key
+    return winner_key
