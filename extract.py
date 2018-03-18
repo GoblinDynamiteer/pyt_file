@@ -27,9 +27,9 @@ def check_valid_source_folder(source_path):
 
 # Find rar and nfo-files passed in directory
 def extract_mov(folder):
-    source_path = os.path.join(cwd, dir_name)
+    source_path = os.path.join(cwd, folder)
     check_valid_source_folder(source_path)  # Will exit script if not valid
-    dest_path = os.path.join(movie.root_path(), movie.determine_letter(dir_name), dir_name)
+    dest_path = os.path.join(movie.root_path(), movie.determine_letter(folder), folder)
     rar_file = None
     nfo_file = None
     for f in os.listdir(source_path):
@@ -39,7 +39,7 @@ def extract_mov(folder):
             nfo_file = str(f)
     # TODO: Check != sub rar
     if rar_file is None:
-        print("Could not find .rar in {}". format(dir_name))
+        print("Could not find .rar in {}". format(folder))
         quit()
     source_file = os.path.join(source_path, rar_file)
     print_log("Found rar-file: [ {} ]".format(os.path.basename(source_file)))
@@ -61,7 +61,7 @@ def extract_mov(folder):
                     filetools.create_nfo(dest_path, "http://www.imdb.com/title/{}".format(imdb_id))
 
 def extract_season(folder):
-    source_path = os.path.join(cwd, dir_name)
+    source_path = os.path.join(cwd, folder)
     check_valid_source_folder(source_path) # Will exit script if not valid
     dest_path = os.path.join(tvshow.root_path(), tvshow.guess_ds_folder(folder))
     if os.path.exists(dest_path):
@@ -98,18 +98,19 @@ parser = argparse.ArgumentParser(description='TV/Movie UnRarer')
 parser.add_argument('dir', type=str, help='Path to movie or tv source')
 args = parser.parse_args()
 
-dir_name = args.dir
+dir_name = movie.remove_extras_from_folder(args.dir)
+print(dir_name)
 cwd = os.getcwd() # Get working directory
 guessed_type = filetools.guess_folder_type(dir_name)
 
 if guessed_type == 'movie':
     print_log("Guessed movie!")
-    extract_mov(dir_name)
+    extract_mov(args.dir)
 elif guessed_type == 'episode':
     print_log("Guessed tv episode!")
 elif guessed_type == 'season':
     print_log("Guessed tv season!")
-    extract_season(dir_name)
+    extract_season(args.dir)
 else:
     print_log("Could not determine type of [ {} ]".format(dir_name))
     quit()
