@@ -36,9 +36,13 @@ class file_list:
             print_log("")   # print script name
             pnl(dtstr)      # print date string
             if line['in_db']:
-                pcb(" [indb] ", "green", endl=False)
+                pcb(" [indb]", "green", endl=False)
             else:
-                pcb(" [nodb] ", "yellow", endl=False)
+                pcb(" [nodb]", "yellow", endl=False)
+            if line['guessed_type']:
+                pcb("[{}]".format(line['guessed_type'][0]), "green", endl=False)
+            else:
+                pcb("[{}]".format("-"), "red", endl=False)
             pcb("[ {} ]".format(line['name']), "blue")
 
 

@@ -1,4 +1,5 @@
-import platform, os, re
+import paths, platform, os, re
+import movie as movie_tools
 from datetime import datetime
 import diskstation as ds
 from shutil import copy2
@@ -84,6 +85,7 @@ def copy_dbs_to_webserver():
 
 # Helper function to guess_folder_type
 def _type_points(folder):
+    folder = movie_tools.remove_extras_from_folder(folder)
     regex = {'season': '\.[Ss]\d{2}\.', 'episode': "\.[Ss]\d{2}[Ee]\d{2}",
              'movie': "\.\d{4}\.\d{3,4}p\."}
     points = {'season': 0, 'episode': 0, 'movie': 0}
