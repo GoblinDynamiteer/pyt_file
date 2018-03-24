@@ -98,5 +98,3 @@ class ls_command:
 def wbnew():
     lsc = ls_command("~/files", remote="wb")
     lsc.print_files()
-
-wbnew()
