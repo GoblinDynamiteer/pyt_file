@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import argparse, os, paths, user_input, re, shutil
 import movie, filetools, tvshow
 from printout import print_script_name as psn
@@ -24,6 +23,21 @@ def check_valid_source_folder(source_path):
     if not os.path.exists(source_path): # Input folder is not a real dir
         print_log("[ {} ] does not exist, quitting!".format(source_path), category="error")
         exit()
+
+# Move movie file
+def move_mov(file):
+    source_path = os.path.join(cwd, file)
+    folder = file.replace(".mkv", "")
+    check_valid_source_folder(source_path)  # Will exit script if not valid
+    dest_path = os.path.join(movie.root_path(),
+        movie.determine_letter(file), folder)
+    if user_input.yes_no("Move to: [ {} ]".format(dest_path),
+        script_name=os.path.basename(__file__)):
+        if not os.path.exists(dest_path):
+            os.makedirs(dest_path)
+        # TODO: Use subprocess.call instead of os.system
+        os.system("mv {} {}".format(source_path, dest_path))
+        print_log("File moved!")
 
 # Find rar and nfo-files passed in directory
 def extract_mov(folder):
@@ -105,7 +119,10 @@ guessed_type = filetools.guess_folder_type(dir_name)
 
 if guessed_type == 'movie':
     print_log("Guessed movie!")
-    extract_mov(args.dir)
+    if(args.dir.endswith(".mkv")):
+        move_mov(args.dir)
+    else:
+        extract_mov(args.dir)
 elif guessed_type == 'episode':
     print_log("Guessed tv episode!")
 elif guessed_type == 'season':
