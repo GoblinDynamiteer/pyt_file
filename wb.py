@@ -157,6 +157,7 @@ class scp_command:
         count = 1
         for command in self.command_queue:
             print_log("item [ {} of {} ]".format(count, len(self.command_queue)))
+            count += 1
             print_log("running command: [ {} ]".format(command))
             args = self._command_to_args(command)
             subprocess.call(args)
