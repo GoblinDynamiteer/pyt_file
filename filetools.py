@@ -77,11 +77,18 @@ def backup_file(src_full_path, dest_dir_full_path):
         return False
 
 # Copy databases to webserver file loc
-def copy_dbs_to_webserver():
+def copy_dbs_to_webserver(tv_or_db):
     htdoc_loc = _config.get_setting("path", "webserver")
-    movdb_loc = _config.get_setting("path", "movdb")
-    copy2(movdb_loc, htdoc_loc)
-    print_log("copied to webserver htdocs: {}".format(movdb_loc));
+    db = None
+    if tv_or_db == "tv":
+        db = _config.get_setting("path", "tvdb")
+    if tv_or_db == "movie":
+        db = _config.get_setting("path", "movdb")
+    if db:
+        copy2(db, htdoc_loc)
+        print_log("copied  to webserver htdocs: {}".format(db));
+    else:
+        print_log("could not copy to htdocs!", category="warning");
 
 # Helper function to guess_folder_type
 def _type_points(folder):
