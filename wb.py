@@ -74,7 +74,8 @@ class file_list:
         dt_str = "{} {}".format(splits[5], splits[6])
         dt = datetime.strptime(dt_str, '%Y-%m-%d %H:%M')
         name = splits[7]
-        return {'name': name, 'date': dt, 'in_db' : db.exists(name),
+        return {'name': name, 'date': dt,
+                'in_db' : db.exists(name.replace(".mkv", "")),
                 'guessed_type' : filetools.guess_folder_type(name)}
 
 class ls_command:
