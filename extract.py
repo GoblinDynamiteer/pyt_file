@@ -61,7 +61,8 @@ def extract_mov(folder):
                 if match:
                     imdb_id = match[0]
                     pr.info("Found IMDb-id in nfo-file: [ {} ]".format(imdb_id))
-                    filetools.create_nfo(dest_path, "http://www.imdb.com/title/{}".format(imdb_id))
+                    filetools.create_nfo(dest_path, "http://www.imdb.com/title/{}"
+                        .format(imdb_id), "movie")
 
 def extract_season(folder):
     source_path = os.path.join(cwd, folder)
