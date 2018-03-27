@@ -20,19 +20,24 @@ def get_creation_date(path_to_file_or_folder, convert=False):
             else datetime.fromtimestamp(ret_time)
 
 # Create nfo file with IMDb-id for movie
-def create_nfo(full_path, imdb):
-    nfo_path = os.path.join(full_path, "movie.nfo")
+def create_nfo(full_path, imdb, type):
+    if type == "movie":
+        file_string = "movie.nfo"
+    elif type == "tv":
+        file_string = "tvshow.nfo"
+    else:
+        pr.error("wrong type for create_nfo: {}".format(type))
+    nfo_path = os.path.join(full_path, file_string)
     if not os.path.isfile(nfo_path):
         try:
             with open(nfo_path, 'w') as newfile:
                 newfile.write(imdb)
             return True
         except:
-            pr.warning("create_nfo: could not create movie.nfo: {}".format(full_path))
+            pr.warning("could not create nfo: {}".format(full_path))
             return False
     else:
-        pr.warning("create_nfo: movie.nfo already exists: {}".format(full_path),
-            category="warning")
+        pr.warning("nfo already exists: {}".format(full_path))
         return True
 
 # Check if file is empty
