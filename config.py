@@ -1,22 +1,9 @@
 # Handle settings in settings.ini
 import paths
 import configparser, os
-from printout import print_blue, print_no_line, print_color_between
-from printout import print_script_name as psn
-from printout import print_color_between as pcb
-from printout import print_error, print_warning
+from printout import print_class as pr
 
-def print_log(string, category=None):
-    script = os.path.basename(__file__)
-    psn(script, "", endl=False) # Print script name
-    if category == "error":
-        print_error("Error: ", endl=False)
-    if category == "warning":
-        print_warning("Warning: ", endl=False)
-    if string.find('[') >= 0 and string.find(']') > 0:
-        pcb(string, "blue")
-    else:
-        print(string)
+pr = pr(os.path.basename(__file__))
 
 class configuration_manager:
     def __init__(self):
@@ -33,16 +20,14 @@ class configuration_manager:
                 self.config.read(self.filename)
                 self.load_success = True
             except:
-                print_log("could not load {}".format(self.filename),
-                    category="error")
+                pr.error("could not load {}".format(self.filename))
         else:
-            print_log("file missing: {}".format(self.filename),
-                category="error")
+            pr.error("file missing: {}".format(self.filename))
 
     def get_setting(self, section, key):
         if section in self.config and key in self.config[section]:
             return self.config[section][key]
         else:
-            print_log("{}:{} does not exist in {}"
-                .format(section, key, self.filename), category="error")
+            pr.error("{}:{} does not exist in {}"
+                .format(section, key, self.filename))
             return None

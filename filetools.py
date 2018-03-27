@@ -3,25 +3,11 @@ import movie as movie_tools
 from datetime import datetime
 import diskstation as ds
 from shutil import copy2
-from printout import print_blue, print_no_line, print_color_between
-from printout import print_script_name as psn
-from printout import print_color_between as pcb
-from printout import print_error
-from printout import print_warning
 from config import configuration_manager as cfg
+from printout import print_class as pr
 
+pr = pr(os.path.basename(__file__))
 _config = cfg()
-
-# Print with script name as prefix
-def print_log(string, category=None):
-    script = os.path.basename(__file__)
-    psn(script, "", endl=False) # Print script name
-    if category == "error":
-        print_error("Error: ", endl=False)
-    if string.find('[') >= 0 and string.find(']') > 0:
-        pcb(string, "blue")
-    else:
-        print(string)
 
 # Try to determine creation date of folder
 def get_creation_date(path_to_file_or_folder, convert=False):
@@ -42,11 +28,10 @@ def create_nfo(full_path, imdb):
                 newfile.write(imdb)
             return True
         except:
-            print_log("create_nfo: could not create movie.nfo: {}"
-                .format(full_path), category="warning")
+            pr.warning("create_nfo: could not create movie.nfo: {}".format(full_path))
             return False
     else:
-        print_log("create_nfo: movie.nfo already exists: {}".format(full_path),
+        pr.warning("create_nfo: movie.nfo already exists: {}".format(full_path),
             category="warning")
         return True
 
@@ -56,8 +41,7 @@ def is_file_empty(full_path):
         if os.stat(full_path).st_size is 0:
             return True
     except:
-        print_log("is_file_empty: could not check file {}".format(full_path),
-            category="warning")
+        pr.warning("is_file_empty: could not check file {}".format(full_path))
         return False
 
 # Copy file to dest, append  YYYY-MM-DD-HHMM
@@ -70,10 +54,8 @@ def backup_file(src_full_path, dest_dir_full_path):
         copy2(src_full_path, dest)
         return True
     except:
-        print_log("backup_file: could not backup file: {}"
-            .format(src_full_path), category="warning")
-        print_log("backup_file: make sure to run scripts as sudo!",
-            category="warning")
+        pr.warning("backup_file: could not backup file: {}".format(src_full_path))
+        pr.warning("backup_file: make sure to run scripts as sudo!")
         return False
 
 # Copy databases to webserver file loc
@@ -86,9 +68,9 @@ def copy_dbs_to_webserver(tv_or_db):
         db = _config.get_setting("path", "movdb")
     if db:
         copy2(db, htdoc_loc)
-        print_log("copied  to webserver htdocs: {}".format(db));
+        pr.info("copied  to webserver htdocs: {}".format(db));
     else:
-        print_log("could not copy to htdocs!", category="warning");
+        pr.warning("could not copy to htdocs!");
 
 # Helper function to guess_folder_type
 def _type_points(folder):

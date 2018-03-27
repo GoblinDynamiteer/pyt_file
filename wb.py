@@ -1,23 +1,11 @@
 # -*- coding: utf-8 -*-
 import subprocess, shlex, os, paths, filetools, argparse, re
-from printout import print_script_name as psn
-from printout import print_color_between as pcb
-from printout import print_no_line as pnl
-from printout import print_error
+from printout import print_class as pr
 from datetime import datetime
 from config import configuration_manager as cfg
 import db_mov as movie_database
 
-def print_log(string, category=None):
-    script = os.path.basename(__file__)
-    psn(script, "", endl=False) # Print script name
-    if category == "error":
-        print_error("Error: ", endl=False)
-    if string.find('[') >= 0 and string.find(']') > 0:
-        pcb(string, "blue")
-    else:
-        if string != "":
-            print(string)
+pr = pr(os.path.basename(__file__))
 
 class file_list:
     def __init__(self, raw_data):
@@ -49,18 +37,17 @@ class file_list:
             if nodb and line['in_db']:
                 continue
             dtstr = line['date'].strftime("%Y-%m-%d %H:%M:%S")
-            print_log("")   # print script name
-            pnl(dtstr)      # print date string
+            pr.info(dtstr, end_line=False)
             if line['in_db']:
-                pcb(" [indb]", "green", endl=False)
+                pr.color_brackets(" [indb]", "green", end_line=False)
             else:
-                pcb(" [nodb]", "yellow", endl=False)
+                pr.color_brackets(" [nodb]", "yellow", end_line=False)
             if line['guessed_type']:
-                pcb("[{}]".format(type), "green", endl=False)
+                pr.color_brackets("[{}]".format(type), "green", end_line=False)
             else:
-                pcb("[{}]".format("-"), "red", endl=False)
-            pnl(" {0:0>3} ".format(line['count']))
-            pcb("[ {} ]".format(name), "blue")
+                pr.color_brackets("[{}]".format("-"), "red", end_line=False)
+            pr.output(" {0:0>3} ".format(line['count']), end_line=False)
+            pr.color_brackets("[ {} ]".format(name), "blue")
 
     def has_file(self, string):
         for line in self.line_data:
@@ -119,14 +106,10 @@ class ls_command:
         return list(arg)
 
     def _run(self):
-        print_log("running command: [ {} ]".format(self.command))
+        pr.info("running command: [ {} ]".format(self.command))
         process = subprocess.Popen(self.args, stdout=subprocess.PIPE)
         out, err = process.communicate()
         return out
-
-    def print_info(self):
-        print_log("command: [ {} ]".format(self.command))
-        print_log("args: [ {} ]".format(self.args))
 
 class scp_command:
     def __init__(self, server = None, queue_list = []):
@@ -152,13 +135,13 @@ class scp_command:
         return list(arg)
 
     def _run(self):
-        print_log("will download {} file{}!".format(len(self.command_queue),
+        pr.info("will download {} file{}!".format(len(self.command_queue),
             "" if len(self.command_queue) == 1 else "s"))
         count = 1
         for command in self.command_queue:
-            print_log("item [ {} of {} ]".format(count, len(self.command_queue)))
+            pr.info("item [ {} of {} ]".format(count, len(self.command_queue)))
             count += 1
-            print_log("running command: [ {} ]".format(command))
+            pr.info("running command: [ {} ]".format(command))
             args = self._command_to_args(command)
             subprocess.call(args)
 
@@ -169,7 +152,7 @@ def wbnew(args):
 
 def wbget(args):
     if not args.dl:
-        print_log("wbget: Did not supply any dl!", category="error")
+        pr.info("wbget: Did not supply any dl!", category="error")
         exit()
     dl_list = args.dl.split(',')
     number_span_regex = re.compile("^\\d{1,3}-\\d{1,3}$")
@@ -212,4 +195,4 @@ if(args.func == "new"):
 elif(args.func == "get"):
     wbget(args)
 else:
-    print_log("Wrong command: {}".format(args.func), category="error")
+    pr.error("Wrong command: [{}".format(args.func))
