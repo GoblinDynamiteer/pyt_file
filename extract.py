@@ -31,7 +31,7 @@ def move_mov(file):
 # Move episode
 def move_ep(file_name_s):
     src = os.path.join(cwd, file_name_s)
-    dest = tvshow.create_new_show_from_ep(file_name_s)
+    dest = tvshow.show_season_path_from_ep_s(file_name_s)
     pr.info(f'move [{file_name_s}]')
     pr.info(f'---> [{dest}]')
     if user_input.yes_no("Proceed with move?", script_name=None):
@@ -42,7 +42,7 @@ def move_ep(file_name_s):
 # Move episode
 def extract_ep(folder):
     src = os.path.join(cwd, folder)
-    dest = tvshow.create_new_show_from_ep(folder)
+    dest = tvshow.show_season_path_from_ep_s(folder)
     rar_file = None
     for f in os.listdir(src):
         if f.endswith(".rar"):
