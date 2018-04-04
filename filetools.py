@@ -88,6 +88,19 @@ def _type_points(folder):
             points[key] += 1
     return points
 
+def is_existing_folder(path):
+    return os.path.isdir(path)
+
+# Get file in folder
+def get_file(path, file_ext, full_path = False):
+    if not os.path.exists(path):
+        pr.warning("{} does not exist!".format(path))
+        return None
+    for file in os.listdir(path):
+        if file.endswith("." + file_ext):
+            return os.path.join(path, str(file)) if full_path else str(file)
+    return None
+
 # Helper function to guess_folder_type
 def _is_regex_match(regex, string):
     rgx = re.compile(regex)
