@@ -91,13 +91,16 @@ def _type_points(folder):
 def is_existing_folder(path):
     return os.path.isdir(path)
 
+def is_existing_file(path):
+    return os.path.isfile(path)
+
 # Get file in folder
-def get_file(path, file_ext, full_path = False):
+def get_file(path, file_or_extension, full_path = False):
     if not os.path.exists(path):
-        pr.warning("{} does not exist!".format(path))
+        pr.warning(f"{path} does not exist! tried checking: {file_or_extension}")
         return None
     for file in os.listdir(path):
-        if file.endswith("." + file_ext):
+        if file.endswith(file_or_extension):
             return os.path.join(path, str(file)) if full_path else str(file)
     return None
 
