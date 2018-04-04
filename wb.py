@@ -4,6 +4,8 @@ from printout import print_class as pr
 from datetime import datetime
 from config import configuration_manager as cfg
 import db_mov as movie_database
+import db_tv as tv_database
+import tvshow
 
 pr = pr(os.path.basename(__file__))
 
@@ -71,12 +73,21 @@ class file_list:
         splits = raw_line.split()
         if len(splits) < 8:
             return None
+        name = splits[7]
         dt_str = "{} {}".format(splits[5], splits[6])
         dt = datetime.strptime(dt_str, '%Y-%m-%d %H:%M')
-        name = splits[7]
-        return {'name': name, 'date': dt,
-                'in_db' : db.exists(name.replace(".mkv", "")),
-                'guessed_type' : filetools.guess_folder_type(name)}
+        type_guess = filetools.guess_folder_type(name)
+        in_db = False
+        if type_guess == "movie":
+            in_db = db_m.exists(name.replace(".mkv", ""))
+        if type_guess == "episode":
+            show_s = tvshow.guess_ds_folder(name)
+            if db_t.exists(show_s):
+                in_db = db_t.has_ep(show_s, name)
+                if not in_db:
+                    in_db = db_t.has_ep(show_s, f"{name}.mkv")
+        return {'name': name, 'date': dt, 'in_db' : in_db,
+                'guessed_type' : type_guess}
 
 class ls_command:
     def __init__(self, directory, remote=False):
@@ -176,7 +187,12 @@ def wbget(args):
             queue.append(item)
     scpc = scp_command("wb", queue)
 
-db = movie_database.database()
+db_m = movie_database.database()
+db_t = tv_database.database()
+
+assert db_m.load_success(), "Movie database could not be loaded!"
+assert db_t.load_success(), "TV database could not be loaded!"
+
 config = cfg()
 parser = argparse.ArgumentParser(description='WBTools')
 parser.add_argument('func', type=str, help='WB command: new, get')
