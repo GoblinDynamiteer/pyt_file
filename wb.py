@@ -74,6 +74,9 @@ class file_list:
         if len(splits) < 8:
             return None
         name = splits[7]
+        if len(splits) > 8:
+            for i in range(8, len(splits)):
+                name += " " + splits[i]
         dt_str = "{} {}".format(splits[5], splits[6])
         dt = datetime.strptime(dt_str, '%Y-%m-%d %H:%M')
         type_guess = filetools.guess_folder_type(name)
@@ -135,9 +138,8 @@ class scp_command:
         self._run()
 
     def _generate_scp_dl_command(self, dl_item):
-        lsc = "scp -r {}:~/files/{} {}".format(self.ssh_server,
-            dl_item, self.dldir)
-        return lsc
+        scp_command = f"scp -r {self.ssh_server}:~/files/{dl_item} {self.dldir}"
+        return scp_command
 
     def _command_to_args(self, command):
         arg = shlex.shlex(command)
@@ -154,6 +156,7 @@ class scp_command:
             pr.info("item [ {} of {} ]".format(count, len(self.command_queue)))
             count += 1
             pr.info("running command: [ {} ]".format(command))
+            #FIXME scp files with spaces
             args = self._command_to_args(command)
             subprocess.call(args)
 
