@@ -104,6 +104,14 @@ def get_file(path, file_or_extension, full_path = False):
             return os.path.join(path, str(file)) if full_path else str(file)
     return None
 
+# Gets video file from folder, first hit
+def get_vid_file(path):
+    for ext in [ "mkv", "avi", "mp4" ]:
+        vid = get_file(path, ext)
+        if vid:
+            return vid
+    return None
+
 # Helper function to guess_folder_type
 def _is_regex_match(regex, string):
     rgx = re.compile(regex)
