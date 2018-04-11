@@ -105,9 +105,9 @@ def get_file(path, file_or_extension, full_path = False):
     return None
 
 # Gets video file from folder, first hit
-def get_vid_file(path):
+def get_vid_file(path, full_path = False):
     for ext in [ "mkv", "avi", "mp4" ]:
-        vid = get_file(path, ext)
+        vid = get_file(path, ext, full_path = full_path)
         if vid:
             return vid
     return None
