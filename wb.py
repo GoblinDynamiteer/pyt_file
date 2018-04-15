@@ -138,6 +138,7 @@ class scp_command:
         self._run()
 
     def _generate_scp_dl_command(self, dl_item):
+        dl_item = dl_item.replace("'", r"\\\'")
         scp_command = f"scp -r {self.ssh_server}:~/files/{dl_item} {self.dldir}"
         return scp_command
 
