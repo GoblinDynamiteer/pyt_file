@@ -135,7 +135,7 @@ full_path = os.path.join(cwd, args.dir)
 guessed_type = filetools.guess_folder_type(dir_name)
 
 if guessed_type == 'movie':
-    pr.info("gessed movie!")
+    pr.info("guessed movie!")
     if filetools.is_existing_file(full_path) and \
         (args.dir.endswith(".mkv") or args.dir.endswith(".mp4") or \
         args.dir.endswith(".avi")):
