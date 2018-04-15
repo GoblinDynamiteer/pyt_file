@@ -3,6 +3,11 @@ import argparse, os, paths, user_input, shlex, subprocess, re
 from printout import print_class as pr
 import filetools as ftool
 import tvshow as tvtool
+import movie as mtool
+import db_mov as movie_database
+import subscene
+
+mdb = movie_database.database()
 
 class mkvinfo_command:
     def __init__(self, vid_file_path):
@@ -137,9 +142,42 @@ def find_srt_tracks(vid_file_path):
         srt_tracks.append({"track" : track_no, "lang" : lang})
     return srt_tracks
 
+def subscene_search(movie_title, movie_folder):
+    pr.info(f"searching subscene for {movie_title}")
+    folder_words = movie_folder.split(".")
+    film = subscene.search(movie_title)
+    sub_candidates = { "en" : [], "sv" : []}
+    sv_winner = None
+    en_winner = None # TODO: can hearing impaired be identified?
+    for sub in film.subtitles:
+        if sub.language.lower() == "swedish":
+            sub_candidates["sv"].append({"name" : str(sub), "url": sub.zipped_url, "points" : 0})
+        elif sub.language.lower() == "english":
+            sub_candidates["en"].append({"name" : str(sub), "url": sub.zipped_url, "points" : 0})
+    for sv_sub in sub_candidates["sv"]:
+        for word in folder_words:
+            if word in sv_sub["name"]:
+                sv_sub["points"] += 1
+    for en_sub in sub_candidates["en"]:
+        for word in folder_words:
+            if word in en_sub["name"]:
+                en_sub["points"] += 1
+    old_points = -1
+    for sv_sub in sub_candidates["sv"]:
+        if sv_sub["points"] > old_points:
+            sv_winner = sv_sub
+            old_points = sv_sub["points"]
+    old_points = -1
+    for en_sub in sub_candidates["en"]:
+        if en_sub["points"] > old_points:
+            en_winner = en_sub
+            old_points = en_sub["points"]
+    return { "sv" : sv_winner, "en": en_winner }
+
 pr = pr(os.path.basename(__file__))
 parser = argparse.ArgumentParser(description='subTools')
 parser.add_argument('command', type=str, help='commands: ripall, renameall')
+parser.add_argument('--movie', "-m", type=str, dest="movie_folder", default=None, help='movie folder')
 args = parser.parse_args()
 cwd = os.getcwd() # get working directory
 
@@ -165,3 +203,17 @@ elif args.command == "renameall": # FIXME: do for movies
                 pr.warning(f"could not determine lang of [{file}]")
                 continue
             rename_srt(os.path.join(cwd, file), lang)
+elif args.command == "search":
+    if not args.movie_folder:
+        pr.error("pass movie folder with --movie / -m")
+    elif mdb.exists(args.movie_folder.replace(r"/", "")):
+        title = mdb.omdb_data(args.movie_folder, "Title")
+        if title:
+            subs = subscene_search(title, args.movie_folder.replace(r"/", ""))
+        else:
+            subs = subscene_search(mtool.determine_title(args.movie_folder), args.movie_folder.replace(r"/", ""))
+        #TODO: dl subs, extract, determine lang, rename, delete zips
+        print(subs["en"]["url"])
+        print(subs["sv"]["url"])
+    else:
+        pr.warning(f"{args.movie_folder} not in db")
