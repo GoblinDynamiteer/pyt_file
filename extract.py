@@ -10,8 +10,9 @@ script = os.path.basename(__file__)
 
 def check_valid_source_folder(source_path):
     if not os.path.exists(source_path): # Input folder is not a real dir
-        pr.error("[ {} ] does not exist, quitting!".format(source_path))
-        exit()
+        pr.error(f"[{source_path}] does not exist!")
+        return False
+    return True
 
 # Move movie file
 def move_mov(file_name_s, folder_name=None):
@@ -20,7 +21,8 @@ def move_mov(file_name_s, folder_name=None):
         folder = folder_name
     else:
         folder = file_name_s.replace(".mkv", "")
-    check_valid_source_folder(src)  # Will exit script if not valid
+    if not check_valid_source_folder(src):
+        return
     dest = os.path.join(movie.root_path(),
         movie.determine_letter(file_name_s), folder)
     pr.info(f'move [{file_name_s}]')
@@ -50,7 +52,7 @@ def extract_ep(folder):
     rar_file = filetools.get_file(src, "rar")
     if rar_file is None:
         pr.warning(f"could not find .rar in [{folder}]")
-        quit()
+        return
     src_rar = os.path.join(src, rar_file)
     pr.info(f"found rar-file: [{rar_file}]")
     pr.info(f'extract [{folder}]')
@@ -63,14 +65,15 @@ def extract_ep(folder):
 # Find rar and nfo-files passed in directory
 def extract_mov(folder):
     source_path = os.path.join(cwd, folder)
-    check_valid_source_folder(source_path)  # Will exit script if not valid
+    if not check_valid_source_folder(source_path):
+        return
     dest_path = os.path.join(movie.root_path(), movie.determine_letter(folder), folder)
     rar_file = filetools.get_file(source_path, "rar")
     nfo_file = filetools.get_file(source_path, "nfo")
     # TODO: Check != sub rar
     if rar_file is None:
         pr.warning(f"could not find .rar in [{folder}]")
-        quit()
+        return
     source_file = os.path.join(source_path, rar_file)
     pr.info("Found rar-file: [ {} ]".format(os.path.basename(source_file)))
     if user_input.yes_no("Extract to: [ {} ]".format(dest_path),
@@ -78,7 +81,7 @@ def extract_mov(folder):
         # TODO: Use subprocess.call instead of os.system
         os.system("unrar e \"{}\" \"{}\"".format(source_file, dest_path))
     else:
-        quit()
+        return
     if nfo_file is not None:
         pattern = re.compile("tt\d{2,}")
         nfo_file = os.path.join(source_path, nfo_file)
@@ -93,7 +96,8 @@ def extract_mov(folder):
 
 def extract_season(folder):
     source_path = os.path.join(cwd, folder)
-    check_valid_source_folder(source_path) # Will exit script if not valid
+    if not check_valid_source_folder(source_path):
+        return
     dest_path = os.path.join(tvshow.root_path(), tvshow.guess_ds_folder(folder))
     if os.path.exists(dest_path):
         pr.info("[ {} ] exists!".format(dest_path))
@@ -129,52 +133,58 @@ parser = argparse.ArgumentParser(description='TV/Movie UnRarer')
 parser.add_argument('dir', type=str, help='Path to movie or tv source')
 args = parser.parse_args()
 
-dir_name = movie.remove_extras_from_folder(args.dir)
 cwd = os.getcwd() # Get working directory
-full_path = os.path.join(cwd, args.dir)
-guessed_type = filetools.guess_folder_type(dir_name)
-
-if guessed_type == 'movie':
-    pr.info("guessed movie!")
-    if filetools.is_existing_file(full_path) and \
-        (args.dir.endswith(".mkv") or args.dir.endswith(".mp4") or \
-        args.dir.endswith(".avi")):
-            pr.info("is video file (not rared)")
-            move_mov(args.dir)
-    elif filetools.is_existing_folder(full_path):
-        file_path = filetools.get_vid_file(full_path, full_path=True)
-        if file_path:
-            file_name = filetools.get_vid_file(full_path, full_path=False)
-            size_bytes = os.path.getsize(file_path)
-            size_mbytes = size_bytes / 1024 / 1024
-            if size_bytes > 200:
-                os.system(f"mv \"{file_path}\" \"{cwd}\"")
-                pr.info("moving to cwd...")
-                move_mov(file_name, folder_name=args.dir)
-        else:
-            extract_mov(args.dir)
-elif guessed_type == 'episode':
-    pr.info("guessed tv episode!")
-    if filetools.is_existing_file(full_path) and \
-        (args.dir.endswith(".mkv") or args.dir.endswith(".mp4") or \
-        args.dir.endswith(".avi")):
-            pr.info("is video file (not rared)")
-            move_ep(args.dir)
-    elif filetools.is_existing_folder(full_path):
-        file_path = filetools.get_vid_file(full_path, full_path=True)
-        if file_path:
-            file_name = filetools.get_vid_file(full_path, full_path=False)
-            size_bytes = os.path.getsize(file_path)
-            size_mbytes = size_bytes / 1024 / 1024
-            if size_bytes > 200:
-                os.system(f"mv \"{file_path}\" \"{cwd}\"")
-                pr.info("moving to cwd...")
-                move_ep(file_name)
-        else:
-            extract_ep(args.dir)
-elif guessed_type == 'season':
-    pr.info("guessed tv season!")
-    extract_season(args.dir)
+if args.dir == "all":
+    items = os.listdir(cwd)
 else:
-    pr.error("Could not determine type of [ {} ]".format(dir_name))
-    quit()
+    items = [ args.dir ]
+count = 1
+for item in items:
+    pr.info(f"processing {count} of {len(items)}")
+    dir_name = movie.remove_extras_from_folder(item)
+    full_path = os.path.join(cwd, item)
+    guessed_type = filetools.guess_folder_type(dir_name)
+    if guessed_type == 'movie':
+        pr.info("guessed movie!")
+        if filetools.is_existing_file(full_path) and \
+            (item.endswith(".mkv") or item.endswith(".mp4") or \
+            item.endswith(".avi")):
+                pr.info("is video file (not rared)")
+                move_mov(item)
+        elif filetools.is_existing_folder(full_path):
+            file_path = filetools.get_vid_file(full_path, full_path=True)
+            if file_path:
+                file_name = filetools.get_vid_file(full_path, full_path=False)
+                size_bytes = os.path.getsize(file_path)
+                size_mbytes = size_bytes / 1024 / 1024
+                if size_bytes > 200:
+                    os.system(f"mv \"{file_path}\" \"{cwd}\"")
+                    pr.info("moving to cwd...")
+                    move_mov(file_name, folder_name=item)
+            else:
+                extract_mov(str(item))
+    elif guessed_type == 'episode':
+        pr.info("guessed tv episode!")
+        if filetools.is_existing_file(full_path) and \
+            (item.endswith(".mkv") or item.endswith(".mp4") or \
+            item.endswith(".avi")):
+                pr.info("is video file (not rared)")
+                move_ep(item)
+        elif filetools.is_existing_folder(full_path):
+            file_path = filetools.get_vid_file(full_path, full_path=True)
+            if file_path:
+                file_name = filetools.get_vid_file(full_path, full_path=False)
+                size_bytes = os.path.getsize(file_path)
+                size_mbytes = size_bytes / 1024 / 1024
+                if size_bytes > 200:
+                    os.system(f"mv \"{file_path}\" \"{cwd}\"")
+                    pr.info("moving to cwd...")
+                    move_ep(file_name)
+            else:
+                extract_ep(str(item))
+    elif guessed_type == 'season':
+        pr.info("guessed tv season!")
+        extract_season(str(item))
+    else:
+        pr.error("Could not determine type of [{source_path}]")
+    count += 1
