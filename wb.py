@@ -138,28 +138,22 @@ class scp_command:
         self._run()
 
     def _generate_scp_dl_command(self, dl_item):
-        dl_item = dl_item.replace("'", r"\\\'")
+        escape_chars = [ ' ', '(', ')', '[', ']', "'" ]
+        for char in escape_chars:
+            replacement = f"\\\\\\{char}"
+            dl_item = dl_item.replace(char, replacement)
         scp_command = f"scp -r {self.ssh_server}:~/files/{dl_item} {self.dldir}"
         return scp_command
-
-    def _command_to_args(self, command):
-        arg = shlex.shlex(command)
-        arg.quotes = '"'
-        arg.whitespace_split = True
-        arg.commenters = ''
-        return list(arg)
 
     def _run(self):
         pr.info("will download {} file{}!".format(len(self.command_queue),
             "" if len(self.command_queue) == 1 else "s"))
         count = 1
         for command in self.command_queue:
-            pr.info("item [ {} of {} ]".format(count, len(self.command_queue)))
+            pr.info(f"item [ {count} of {len(self.command_queue)} ]")
             count += 1
             pr.info("running command: [ {} ]".format(command))
-            #FIXME scp files with spaces
-            args = self._command_to_args(command)
-            subprocess.call(args)
+            subprocess.call(command, shell=True)
 
 def wbnew(args):
     lsc = ls_command("~/files", remote="wb")
