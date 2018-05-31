@@ -79,6 +79,8 @@ def copy_dbs_to_webserver(tv_or_db):
 
 # Helper function to guess_folder_type
 def _type_points(folder):
+    folder = folder.replace(' ', '.')
+    folder = folder.replace('.-.', '-')
     folder = movie_tools.remove_extras_from_folder(folder)
     regex = {'season': '\.[Ss]\d{2}\.', 'episode': "\.[Ss]\d{2}[Ee]\d{2}",
              'movie': "\.\d{4}\.\d{3,4}p\."}
