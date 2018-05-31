@@ -82,7 +82,8 @@ class file_list:
         type_guess = filetools.guess_folder_type(name)
         in_db = False
         if type_guess == "movie":
-            in_db = db_m.exists(name.replace(".mkv", ""))
+            mov_fixed = filetools.fix_invalid_folder_or_file_name(name)
+            in_db = db_m.exists(mov_fixed.replace(".mkv", ""))
         if type_guess == "episode":
             show_s = tvshow.guess_ds_folder(name)
             if db_t.exists(show_s):
