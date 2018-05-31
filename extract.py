@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import argparse, os, paths, user_input, re, shutil
+import argparse, os, paths, user_input, re, shutil, subprocess
 import movie, filetools, tvshow
 from config import configuration_manager as cfg
 from printout import print_class as pr
@@ -26,15 +26,17 @@ def move_mov(file_name_s, folder_name=None):
         folder = file_name_s.replace(".mkv", "")
     if not check_valid_source_folder(src):
         return
+    folder = filetools.fix_invalid_folder_or_file_name(folder)
+    file_dest = filetools.fix_invalid_folder_or_file_name(file_name_s)
     dest = os.path.join(movie.root_path(),
-        movie.determine_letter(file_name_s), folder)
+        movie.determine_letter(file_name_s), folder, file_dest)
     pr.info(f'move [{file_name_s}]')
     pr.info(f'---> [{dest}]')
     if user_input.yes_no("Proceed with move?", script_name=None):
         if not os.path.exists(dest):
             os.makedirs(dest)
-        # TODO: Use subprocess.call instead of os.system
-        os.system("mv {} {}".format(src, dest))
+        command = _generate_mv_command(src, dest)
+        subprocess.call(command, shell=True)
         pr.info("File moved!")
 
 # Move episode
