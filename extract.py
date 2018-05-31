@@ -22,6 +22,9 @@ def _fix_invalid_folder_or_file_name(string):
         string = string[:-1]
     return string
 
+def _generate_mv_command(src, dest):
+    return "mv {} {}".format(src.replace(" ", "\\ "), dest)
+
 # Move movie file
 def move_mov(file_name_s, folder_name=None):
     src = os.path.join(cwd, file_name_s)
