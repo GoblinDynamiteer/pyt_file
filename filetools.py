@@ -132,3 +132,12 @@ def guess_folder_type(folder):
             max_key = points[key]
             winner_key = key
     return winner_key
+
+# Make folder/file name more "scene-like"
+def fix_invalid_folder_or_file_name(string):
+    string = string.replace(' ', '.')
+    string = string.replace('.-.', '-')
+    string = re.sub("blu-ray", "BluRay", string, flags=re.I)
+    if string.endswith('-'):
+        string = string[:-1]
+    return string

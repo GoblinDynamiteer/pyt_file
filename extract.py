@@ -14,14 +14,6 @@ def check_valid_source_folder(source_path):
         return False
     return True
 
-def _fix_invalid_folder_or_file_name(string):
-    string = string.replace(' ', '.')
-    string = string.replace('.-.', '-')
-    string = re.sub("blu-ray", "BluRay", string, flags=re.I)
-    if string.endswith('-'):
-        string = string[:-1]
-    return string
-
 def _generate_mv_command(src, dest):
     return "mv {} {}".format(src.replace(" ", "\\ "), dest)
 
