@@ -159,8 +159,8 @@ for item in items:
             if file_path:
                 file_name = filetools.get_vid_file(full_path, full_path=False)
                 size_bytes = os.path.getsize(file_path)
-                size_mbytes = size_bytes / 1024 / 1024
-                if size_bytes > 200:
+                size_mbytes = size_bytes / 1024.0 / 1024.0
+                if size_mbytes > 200:
                     os.system(f"mv \"{file_path}\" \"{cwd}\"")
                     pr.info("moving to cwd...")
                     move_mov(file_name, folder_name=item)
@@ -178,8 +178,8 @@ for item in items:
             if file_path:
                 file_name = filetools.get_vid_file(full_path, full_path=False)
                 size_bytes = os.path.getsize(file_path)
-                size_mbytes = size_bytes / 1024 / 1024
-                if size_bytes > 200:
+                size_mbytes = size_bytes / 1024.0 / 1024.0
+                if size_mbytes > 200:
                     os.system(f"mv \"{file_path}\" \"{cwd}\"")
                     pr.info("moving to cwd...")
                     move_ep(file_name)
@@ -189,5 +189,5 @@ for item in items:
         pr.info("guessed tv season!")
         extract_season(str(item))
     else:
-        pr.error("Could not determine type of [{source_path}]")
+        pr.error(f"Could not determine type of [{source_path}]")
     count += 1
