@@ -8,7 +8,7 @@ pr = pr(os.path.basename(__file__))
 _config = cfg()
 
 def get_mount_points():
-    return ['TV', 'FILM', 'MISC', 'BACKUP', 'DATA', 'DOCEDU', 'AUDIO', 'Rest']
+    return ['TV', 'FILM', 'MISC', 'BACKUP', 'DATA', 'DOCEDU', 'AUDIO']
 
 def get_mount_dest():
     return _config.get_setting("path", "dsmount")
