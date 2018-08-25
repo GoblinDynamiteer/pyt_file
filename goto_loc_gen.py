@@ -27,7 +27,9 @@ LOCS = {"dl" :    {"destinations" : [os.path.join(HOME, "downloads"),
         "data" :  {"destinations" : [os.path.join(HOME, "smb", "data")]},
         "smb" :   {"destinations" : [os.path.join(HOME, "smb")]},
         "misc" :  {"destinations" : [os.path.join(HOME, "smb", "misc")]},
-        "audio" : {"destinations" : [os.path.join(HOME, "smb", "audio")]}
+        "audio" : {"destinations" : [os.path.join(HOME, "smb", "audio")]},
+        "drive" : {"destinations" : [os.path.join(HOME, "hd2", "gdrive"),
+                                     os.path.join(HOME, "gdrive")]}
 }
 
 save(LOCS, JSON_FILE_PATH)
