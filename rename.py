@@ -5,6 +5,7 @@
 import os
 import argparse
 import sys
+import re
 
 def op_spaces_to_char(file_path, replace_char='_'):
     '''Replace spaces in filename'''
@@ -22,7 +23,7 @@ def op_trim_extras(file_path):
     file_name = str(os.path.basename(file_path))
     new_file_name = file_name
     # replace _-_ or " - " with -
-    for rep in ["_-_", " - "]:
+    for rep in ["_-_", " - ", "_--_"]:
         new_file_name = new_file_name.replace(rep, "-")
     # replace excess underscores
     while "__" in new_file_name:
@@ -47,6 +48,17 @@ def op_replace_special_chars(file_path):
         new_file_name = new_file_name.replace(sc, rep)
     return new_file_name
 
+def op_add_leading_zeroes(file_path):
+    ''' Adds leding zeroes filenames starting with one digit '''
+    file_name = str(os.path.basename(file_path))
+    digit_match = re.search(r"^\d+", file_name)
+    if digit_match:
+        digit = digit_match.group(0)
+        length = len(digit)
+        return f"{int(digit):02}{file_name[length:]}"
+    return file_name
+
+
 def rename_operation(file_path, operations):
     '''Runs string operations on filename, then renames the file'''
     file_name = str(os.path.basename(file_path))
@@ -63,7 +75,8 @@ OPERATIONS = [op_spaces_to_char,
               op_tolower,
               op_trim_extras,
               op_replace_special_chars,
-              op_remove_special_chars]
+              op_remove_special_chars,
+              op_add_leading_zeroes]
 try:
     if os.path.isdir(ARGS.dir):
         FILES = os.listdir(ARGS.dir)
