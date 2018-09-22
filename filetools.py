@@ -1,4 +1,11 @@
-import paths, platform, os, re
+#!/usr/bin/env python3.6
+
+''' File tools '''
+
+import paths
+import platform
+import os
+import re
 import movie as movie_tools
 from datetime import datetime
 import diskstation as ds
@@ -6,12 +13,12 @@ from shutil import copy2
 from config import configuration_manager as cfg
 from printout import print_class as pr
 
-pr = pr(os.path.basename(__file__))
-_config = cfg()
+PRINT = pr(os.path.basename(__file__))
+CONFIG = cfg()
 
-# Try to determine creation date of folder
+
 def get_creation_date(path_to_file_or_folder, convert=False):
-    if platform.system() == 'Linux': # Not supported
+    if platform.system() == 'Linux':
         return None
     if platform.system() == 'Windows':
         ret_time = os.path.getctime(path_to_file_or_folder)
@@ -19,14 +26,14 @@ def get_creation_date(path_to_file_or_folder, convert=False):
         return ret_time if convert is False \
             else datetime.fromtimestamp(ret_time)
 
-# Create nfo file with IMDb-id for movie
-def create_nfo(full_path, imdb, type, replace=False):
-    if type == "movie":
+
+def create_nfo(full_path, imdb, nfo_type, replace=False):
+    if nfo_type == "movie":
         file_string = "movie.nfo"
-    elif type == "tv":
+    elif nfo_type == "tv":
         file_string = "tvshow.nfo"
     else:
-        pr.error("wrong type for create_nfo: {}".format(type))
+        PRINT.error("wrong type for create_nfo: {}".format(type))
     nfo_path = os.path.join(full_path, file_string)
     if not os.path.isfile(nfo_path) or (os.path.isfile(nfo_path) and replace):
         try:
@@ -34,22 +41,24 @@ def create_nfo(full_path, imdb, type, replace=False):
                 newfile.write(imdb)
             return True
         except:
-            pr.warning("could not create nfo: {}".format(full_path))
+            PRINT.warning("could not create nfo: {}".format(full_path))
             return False
     else:
-        pr.warning("nfo already exists: {}, not replacing".format(full_path))
+        PRINT.warning(
+            "nfo already exists: {}, not replacing".format(full_path))
         return True
 
-# Check if file is empty
+
 def is_file_empty(full_path):
     try:
         if os.stat(full_path).st_size is 0:
             return True
     except:
-        pr.warning("is_file_empty: could not check file {}".format(full_path))
+        PRINT.warning(
+            "is_file_empty: could not check file {}".format(full_path))
         return False
 
-# Copy file to dest, append  YYYY-MM-DD-HHMM
+
 def backup_file(src_full_path, dest_dir_full_path):
     now = datetime.now().strftime("%Y-%m-%d-%H%M")
     dest = os.path.join(dest_dir_full_path, now)
@@ -59,25 +68,26 @@ def backup_file(src_full_path, dest_dir_full_path):
         copy2(src_full_path, dest)
         return True
     except:
-        pr.warning("backup_file: could not backup file: {}".format(src_full_path))
-        pr.warning("backup_file: make sure to run scripts as sudo!")
+        PRINT.warning(
+            "backup_file: could not backup file: {}".format(src_full_path))
+        PRINT.warning("backup_file: make sure to run scripts as sudo!")
         return False
 
-# Copy databases to webserver file loc
+
 def copy_dbs_to_webserver(tv_or_db):
-    htdoc_loc = _config.get_setting("path", "webserver")
+    htdoc_loc = CONFIG.get_setting("path", "webserver")
     db = None
     if tv_or_db == "tv":
-        db = _config.get_setting("path", "tvdb")
+        db = CONFIG.get_setting("path", "tvdb")
     if tv_or_db == "movie":
-        db = _config.get_setting("path", "movdb")
+        db = CONFIG.get_setting("path", "movdb")
     if db:
         copy2(db, htdoc_loc)
-        pr.info("copied  to webserver htdocs: {}".format(db));
+        PRINT.info("copied  to webserver htdocs: {}".format(db))
     else:
-        pr.warning("could not copy to htdocs!");
+        PRINT.warning("could not copy to htdocs!")
 
-# Helper function to guess_folder_type
+
 def _type_points(folder):
     folder = folder.replace(' ', '.')
     folder = folder.replace('.-.', '-')
@@ -90,31 +100,34 @@ def _type_points(folder):
             points[key] += 1
     return points
 
+
 def is_existing_folder(path):
     return os.path.isdir(path)
+
 
 def is_existing_file(path):
     return os.path.isfile(path)
 
-# Get file in folder
-def get_file(path, file_or_extension, full_path = False):
+
+def get_file(path, file_or_extension, full_path=False):
     if not os.path.exists(path):
-        pr.warning(f"{path} does not exist! tried checking: {file_or_extension}")
+        PRINT.warning(
+            f"{path} does not exist! tried checking: {file_or_extension}")
         return None
     for file in os.listdir(path):
         if file.endswith(file_or_extension):
             return os.path.join(path, str(file)) if full_path else str(file)
     return None
 
-# Gets video file from folder, first hit
-def get_vid_file(path, full_path = False):
-    for ext in [ "mkv", "avi", "mp4" ]:
-        vid = get_file(path, ext, full_path = full_path)
+
+def get_vid_file(path, full_path=False):
+    for ext in ["mkv", "avi", "mp4"]:
+        vid = get_file(path, ext, full_path=full_path)
         if vid:
             return vid
     return None
 
-# Helper function to guess_folder_type
+
 def _is_regex_match(regex, string):
     rgx = re.compile(regex)
     match = re.search(rgx, string)
@@ -122,7 +135,7 @@ def _is_regex_match(regex, string):
         return True
     return False
 
-# Try to determine if folder (as string) is a movie / season / episode
+
 def guess_folder_type(folder):
     points = _type_points(folder)
     max_key = 0
@@ -133,7 +146,7 @@ def guess_folder_type(folder):
             winner_key = key
     return winner_key
 
-# Make folder/file name more "scene-like"
+
 def fix_invalid_folder_or_file_name(string):
     string = string.replace(' ', '.')
     string = string.replace('.-.', '-')
