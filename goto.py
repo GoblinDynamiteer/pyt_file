@@ -1,6 +1,11 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3.6
 
-import os, sys, json
+''' Personal navigation script '''
+
+import os
+import sys
+import json
+
 
 def load(json_file):
     """ Loads json file with goto location data """
@@ -8,8 +13,10 @@ def load(json_file):
         data = json.load(jf)
     return data
 
+
 class Goto(object):
     """ Stores 'goto-locations' """
+
     def __init__(self, shortcut):
         self.shortcuts = [shortcut]
         self.destinations = []
@@ -36,6 +43,7 @@ class Goto(object):
             if os.path.exists(dest):
                 return dest
         return None
+
 
 HOME = os.path.expanduser("~")
 SCRIPT_DIR = os.path.realpath(__file__)
