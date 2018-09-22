@@ -1,15 +1,17 @@
 # Handle settings in settings.ini
 import paths
-import configparser, os
+import configparser
+import os
 from printout import print_class as pr
 
-pr = pr(os.path.basename(__file__))
+PRINT = pr(os.path.basename(__file__))
+
 
 class configuration_manager:
     def __init__(self):
-        self.config = None;
+        self.config = None
         self.filename = paths.get_path_to_file_same_dir(__file__,
-            "settings.ini")
+                                                        "settings.ini")
         self.load_success = False
         self._load_settings()
 
@@ -20,14 +22,13 @@ class configuration_manager:
                 self.config.read(self.filename)
                 self.load_success = True
             except:
-                pr.error("could not load {}".format(self.filename))
+                PRINT.error("could not load {}".format(self.filename))
         else:
-            pr.error("file missing: {}".format(self.filename))
+            PRINT.error("file missing: {}".format(self.filename))
 
     def get_setting(self, section, key):
         if section in self.config and key in self.config[section]:
             return self.config[section][key]
-        else:
-            pr.error("{}:{} does not exist in {}"
-                .format(section, key, self.filename))
-            return None
+        PRINT.error("{}:{} does not exist in {}"
+                    .format(section, key, self.filename))
+        return None
