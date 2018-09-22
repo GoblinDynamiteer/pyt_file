@@ -1,19 +1,48 @@
-# -*- coding: utf-8 -*-
-import subprocess, shlex, os, paths, filetools, argparse, re
-from printout import print_class as pr
+#!/usr/bin/env python3.6
+
+'''Personal script to interact with torrent-server'''
+
+import subprocess
+import shlex
+import os
+import re
+import argparse
+import filetools
 from datetime import datetime
+from printout import print_class as pr
 from config import configuration_manager as cfg
 import db_mov as movie_database
 import db_tv as tv_database
 import tvshow
 
-pr = pr(os.path.basename(__file__))
 
-class file_list:
+DB_MOV = movie_database.database()
+DB_TV = tv_database.database()
+
+assert DB_MOV.load_success(), "Movie database could not be loaded!"
+assert DB_TV.load_success(), "TV database could not be loaded!"
+
+PRINT = pr(os.path.basename(__file__))
+CONFIG = cfg()
+PARSER = argparse.ArgumentParser(description='WBTools')
+PARSER.add_argument('func', type=str, help='WB command: new, get')
+PARSER.add_argument('-t', '--type', dest='type', default=None,
+                    help='filter new list by types: m, t, s')
+PARSER.add_argument('-f', '--filter', dest='filter', default=None,
+                    help='filter new list by string')
+PARSER.add_argument('-nodb', dest='nodb', action="count", default=False,
+                    help='Display only items not in db')
+PARSER.add_argument('-dl', dest='dl', default=None,
+                    help='Files to download, name or number. Can be comma separated,'
+                    'or span (numbers only)')
+ARGS = PARSER.parse_args()
+
+
+class FileList:
     def __init__(self, raw_data):
-        self.raw_data = raw_data #Raw data from subprocess out
+        self.raw_data = raw_data
         self.raw_lines = self._raw_data_to_lines(raw_data)
-        self.line_data = [] #empty list
+        self.line_data = []
         counter = 1
         for line in self.raw_lines:
             d = self._line_to_dict(line)
@@ -22,7 +51,7 @@ class file_list:
                 counter += 1
                 self.line_data.append(d)
 
-    def _print_list(self, list_type, name_filter, nodb):
+    def print_list(self, list_type, name_filter, nodb):
         for line in self.line_data:
             if line['guessed_type']:
                 type = line['guessed_type'][0]
@@ -39,17 +68,18 @@ class file_list:
             if nodb and line['in_db']:
                 continue
             dtstr = line['date'].strftime("%Y-%m-%d %H:%M:%S")
-            pr.info(dtstr, end_line=False)
+            PRINT.info(dtstr, end_line=False)
             if line['in_db']:
-                pr.color_brackets(" [indb]", "green", end_line=False)
+                PRINT.color_brackets(" [indb]", "green", end_line=False)
             else:
-                pr.color_brackets(" [nodb]", "yellow", end_line=False)
+                PRINT.color_brackets(" [nodb]", "yellow", end_line=False)
             if line['guessed_type']:
-                pr.color_brackets("[{}]".format(type), "green", end_line=False)
+                PRINT.color_brackets("[{}]".format(
+                    type), "green", end_line=False)
             else:
-                pr.color_brackets("[{}]".format("-"), "red", end_line=False)
-            pr.output(" {0:0>3} ".format(line['count']), end_line=False)
-            pr.color_brackets("[ {} ]".format(name), "blue")
+                PRINT.color_brackets("[{}]".format("-"), "red", end_line=False)
+            PRINT.output(" {0:0>3} ".format(line['count']), end_line=False)
+            PRINT.color_brackets("[ {} ]".format(name), "blue")
 
     def has_file(self, string):
         for line in self.line_data:
@@ -83,27 +113,28 @@ class file_list:
         in_db = False
         if type_guess == "movie":
             mov_fixed = filetools.fix_invalid_folder_or_file_name(name)
-            in_db = db_m.exists(mov_fixed.replace(".mkv", ""))
+            in_db = DB_MOV.exists(mov_fixed.replace(".mkv", ""))
         if type_guess == "episode":
             show_s = tvshow.guess_ds_folder(name)
-            if db_t.exists(show_s):
-                in_db = db_t.has_ep(show_s, name)
+            if DB_TV.exists(show_s):
+                in_db = DB_TV.has_ep(show_s, name)
                 if not in_db:
-                    in_db = db_t.has_ep(show_s, f"{name}.mkv")
-        return {'name': name, 'date': dt, 'in_db' : in_db,
-                'guessed_type' : type_guess}
+                    in_db = DB_TV.has_ep(show_s, f"{name}.mkv")
+        return {'name': name, 'date': dt, 'in_db': in_db,
+                'guessed_type': type_guess}
 
-class ls_command:
+
+class ListCommand:
     def __init__(self, directory, remote=False):
         self.dir = directory
         self.ssh_server = remote
         self.command = self._generate_command()
         self.args = self._command_to_args(self.command)
         self.output = self._run()
-        self.files = file_list(self.output)
+        self.files = FileList(self.output)
 
     def print_files(self, list_type=None, name_filter=None, nodb=False):
-        self.files._print_list(list_type, name_filter, nodb)
+        self.files.print_list(list_type, name_filter, nodb)
 
     def get_file_list(self):
         return self.files
@@ -122,14 +153,15 @@ class ls_command:
         return list(arg)
 
     def _run(self):
-        pr.info("running command: [ {} ]".format(self.command))
+        PRINT.info("running command: [ {} ]".format(self.command))
         process = subprocess.Popen(self.args, stdout=subprocess.PIPE)
         out, err = process.communicate()
         return out
 
-class scp_command:
-    def __init__(self, server = None, queue_list = []):
-        self.dldir = config.get_setting("path", "download")
+
+class SCPCommand:
+    def __init__(self, server=None, queue_list=[]):
+        self.dldir = CONFIG.get_setting("path", "download")
         self.ssh_server = server
         self.queue = queue_list
         self.command_queue = []
@@ -139,7 +171,7 @@ class scp_command:
         self._run()
 
     def _generate_scp_dl_command(self, dl_item):
-        escape_chars = [ ' ', '(', ')', '[', ']', "'" ]
+        escape_chars = [' ', '(', ')', '[', ']', "'"]
         for char in escape_chars:
             replacement = f"\\\\\\{char}"
             dl_item = dl_item.replace(char, replacement)
@@ -147,28 +179,30 @@ class scp_command:
         return scp_command
 
     def _run(self):
-        pr.info("will download {} file{}!".format(len(self.command_queue),
-            "" if len(self.command_queue) == 1 else "s"))
+        PRINT.info("will download {} file{}!".format(len(self.command_queue),
+                                                     "" if len(self.command_queue) == 1 else "s"))
         count = 1
         for command in self.command_queue:
-            pr.info(f"item [ {count} of {len(self.command_queue)} ]")
+            PRINT.info(f"item [ {count} of {len(self.command_queue)} ]")
             count += 1
-            pr.info("running command: [ {} ]".format(command))
+            PRINT.info("running command: [ {} ]".format(command))
             subprocess.call(command, shell=True)
 
-def wbnew(args):
-    lsc = ls_command("~/files", remote="wb")
-    lsc.print_files(list_type=args.type, name_filter=args.filter,
-        nodb=args.nodb)
 
-def wbget(args):
+def list_new_files(args):
+    lsc = ListCommand("~/files", remote="wb")
+    lsc.print_files(list_type=args.type, name_filter=args.filter,
+                    nodb=args.nodb)
+
+
+def download_files(args):
     if not args.dl:
-        pr.info("wbget: Did not supply any dl!", category="error")
+        PRINT.info("wbget: Did not supply any dl!", category="error")
         exit()
     dl_list = args.dl.split(',')
     number_span_regex = re.compile("^\\d{1,3}-\\d{1,3}$")
     number_regex = re.compile("^\\d{1,3}$")
-    lsc = ls_command("~/files", remote="wb")
+    lsc = ListCommand("~/files", remote="wb")
     file_list = lsc.get_file_list()
     queue = []
     for item in dl_list:
@@ -184,31 +218,12 @@ def wbget(args):
             continue
         if file_list.has_file(item):
             queue.append(item)
-    scpc = scp_command("wb", queue)
+    scpc = SCPCommand("wb", queue)
 
-db_m = movie_database.database()
-db_t = tv_database.database()
 
-assert db_m.load_success(), "Movie database could not be loaded!"
-assert db_t.load_success(), "TV database could not be loaded!"
-
-config = cfg()
-parser = argparse.ArgumentParser(description='WBTools')
-parser.add_argument('func', type=str, help='WB command: new, get')
-parser.add_argument('-t', '--type', dest='type', default=None,
-    help='filter new list by types: m, t, s')
-parser.add_argument('-f', '--filter', dest='filter', default=None,
-    help='filter new list by string')
-parser.add_argument('-nodb', dest='nodb', action="count", default=False,
-    help='Display only items not in db')
-parser.add_argument('-dl', dest='dl', default=None,
-    help='Files to download, name or number. Can be comma separated,'
-    'or span (numbers only)')
-args = parser.parse_args()
-
-if(args.func == "new"):
-    wbnew(args)
-elif(args.func == "get"):
-    wbget(args)
+if(ARGS.func == "new"):
+    list_new_files(ARGS)
+elif(ARGS.func == "get"):
+    download_files(ARGS)
 else:
-    pr.error("Wrong command: [{}".format(args.func))
+    PRINT.error("Wrong command: [{}".format(ARGS.func))
