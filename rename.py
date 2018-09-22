@@ -7,16 +7,19 @@ import argparse
 import sys
 import re
 
+
 def op_spaces_to_char(file_path, replace_char='_'):
     '''Replace spaces in filename'''
     file_name = str(os.path.basename(file_path))
     new_file_name = file_name.replace(" ", replace_char)
     return new_file_name
 
+
 def op_tolower(file_path):
     '''Lowercases filename'''
     file_name = str(os.path.basename(file_path))
     return file_name.lower()
+
 
 def op_trim_extras(file_path):
     '''Trims unneeded extras'''
@@ -30,14 +33,16 @@ def op_trim_extras(file_path):
         new_file_name = new_file_name.replace("__", "_")
     return new_file_name
 
+
 def op_remove_special_chars(file_path):
     '''Removes special characters like !#, '''
     file_name = str(os.path.basename(file_path))
     new_file_name = file_name
-    spec_chars = ["#",",","!","’", "'"]
+    spec_chars = ["#", ",", "!", "’", "'"]
     for sc in spec_chars:
         new_file_name = new_file_name.replace(sc, "")
     return new_file_name
+
 
 def op_replace_special_chars(file_path):
     '''Replaces special characters like & '''
@@ -47,6 +52,7 @@ def op_replace_special_chars(file_path):
     for sc, rep in spec_chars:
         new_file_name = new_file_name.replace(sc, rep)
     return new_file_name
+
 
 def op_add_leading_zeroes(file_path):
     ''' Adds leding zeroes filenames starting with one digit '''
@@ -66,6 +72,7 @@ def rename_operation(file_path, operations):
     for operation in operations:
         new_file_name = operation(new_file_name)
     os.rename(file_path, new_file_name)
+
 
 PARSER = argparse.ArgumentParser()
 PARSER.add_argument("--dir", help="directory or file to process", type=str)
